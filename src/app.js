@@ -1,64 +1,51 @@
-const express = require('express');
+const express = require("express");
+const noteModel = require("./models/note.model");
+const app = express();
 
+app.use(express.json());
 
-const app = express()
+app.post("/notes", async (req, res) => {
+  const data = req.body;
+  await noteModel.create({
+    title: data.title,
+    description: data.description,
+  });
+  res.status(201).json({
+    message: "note created",
+  });
+});
 
-const notes=[]
+app.get("/notes", async (req, res) => {
+  const notes = await noteModel.find();
+  res.status(200).json({
+    message: "Note Fetched Successfully",
+    notes: notes,
+  });
+});
 
-app.use(express.json())
+app.delete("/notes/:id", async (req, res) =>{
+  const id = req.params.id
 
-app.get("/",(req,res)=>{
-    res.send("Hello World")
-})
+  await noteModel.findOneAndDelete({
+    _id: id
+  });
 
-app.get("/about",(req,res)=>{
-    res.send("About Page")
-})
+  res.status(200).json({
+    message: "Note Deleted Sucessfulyl",
+  });
+});
 
-app.post('/notes', (req,res)=>{
-    notes.push(req.body)
+app.patch("/notes/:id", async (req, res)=>{
+    const id = req.params.id
+    const description = req.body.description
 
-    res.status(201).json({
-        message:"note created successfully"
-    })
-})
-
-app.get('/notes',(req,res)=>{
+    await noteModel.findOneAndUpdate(
+        {_id: id},
+        {description:description}
+    )
     res.status(200).json({
-        message:"notes fetched successfully",
-        notes: notes
+        message:"Note Updated Successfully"
     })
 })
 
-app.delete('/notes/:index',(req,res)=>{
-    const index = req.params.index
-    delete notes[index]
-    res.status(200).json({
-        message:"note deleted sucessfully"
-    })
-})
-
-app.patch('/notes/:index',(req,res)=>{
- const index = Number(req.params.index)
- const note = notes[index]
-
- if (!Number.isInteger(index) || index < 0 || !note || Array.isArray(note)) {
-     return res.status(404).json({
-         message:"note not found"
-     })
- }
-
- if (!req.body || Array.isArray(req.body) || typeof req.body.description !== "string") {
-     return res.status(400).json({
-         message:"description must be a string"
-     })
- }
-
- note.description = req.body.description
-
- res.status(200).json({
-     message:"note updated successfully",
-     note
- })
-})
-module.exports = app
+module.exports = app;
